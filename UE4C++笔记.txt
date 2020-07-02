@@ -1,0 +1,320 @@
+
+【调试打印】
+GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Red,TEXT("Hello World")); 【头文件"Engine/Engine.h"】
+FString::Printf(TEXT("%s is me!"),Name);
+GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hello world, this is %d"), i), true);
+Gengine->ClearOnScreenDebugMessage();----------清除打印
+UE_LOG(LogTemp,Warnng,TEXT("这是个警告！"));
+UE_LOG(LogTemp,Warnng,TEXT("%%F Hit@: x=%f,y=%f,z=%f"),5.0f,3.0f,3.3f));
+UE_LOG(LogTemp,Log,TEXT("日志"));
+
+【字符串】
+Fstring::Format(TEXT("ABCDEF")))
+
+
+【普通宏】
+*FString(_func_)----------------------- 函数名字
+*FString(_FUNCTION_)------------------- 类::函数名
+
+【UCLASS】类宏
+Blueprintable ------------------------- 可生成子类的
+
+
+【UPROPERTY】变量宏   Replicated -----------------------------可复制(网络多人使用的)
+Category ——————-———————-— Category = "Client"分类
+BlueprintRead---------------------------蓝图可读(其子类)
+BlueprintReadWrite----------------------蓝图可读可写(其子类)
+meta ---------------------------------- 元数据(MakeEditWidget = "true")变量属性显示3D控件。可在地图里编辑
+meta = (EditCondition = "布尔变量") ---- 变量为真时才可交互
+meta = (ClampMin = 0.1,ClampMax = 100)--- 设定取值范围
+
+VisibleAnywhere ——————-————— 蓝图编辑界面右侧编辑窗口显示、场景实例也可见//(不可编辑)
+VisibleInstanceOnly ——————-———-场景实例右侧窗口可见//(不可编辑)
+VisibleDefaultsOnly ——————-————-蓝图右侧窗口可见//(不可编辑)
+
+
+EditAnywhere ——————-———————蓝图界面右侧窗口、场景实例右侧编辑与显示
+EditInstanceOnly -----------------------场景实例(地图拖拽出，已生成的对象)才可编辑
+EditDefaultsOnly------------------------蓝图右侧细节可编辑
+
+
+【UFUNCTION】函数宏
+BlueprintPure --------------------------纯函数
+BlueprintCallable ----------------------蓝图可以调用(其子类)
+BlueprintProtected ---------------------相当于C++的保护成员，只有自己的类才可以调用，其它类无法调用
+Meta ————————————————— 元数据(DisplayName = "别名")、种类很多
+Keywords------------------------------- 蓝图搜索节点的关键字
+BlueprintImplementableEvent------------ 蓝图里实现
+BlueprintNativeEvent ------------------ 函数名+_Implementation(...)子类可覆盖父类的函数
+
+【UENUN】枚举宏
+BlueprintType --------------------------蓝图可
+枚举值 UMETA----------------------------元数据(DisplayName = "别名")
+
+
+【类型转换】
+子类型指针 =  Cast<子类型>(需转指针对象);
+
+——————————————————————————————————————
+Super::Begin();-------------Super::上级父类
+TSubclassOf<class 类型> 对象名;------------- class类的类型对象。 一个类型
+
+CreateDefaultSubObject<UStaticMeshComponent>(TEXT("CustomStaticMesh"));-------Text在此处是类别
+组件->SetupAttachment(根组件);---------------------将组件添加到根组件上
+组件->SetRelativeLocation(F)/Rotation(F);----------设置相对父类组件的位置
+
+模型->AddFource------------------------- 加力
+模型->AddTorque------------------------- 扭矩
+FMath::FRand()---------------------------0-1之间随机(蓝图Random Float)
+FMath::FRandRange(a,b)-------------------a-b范围内随机
+AutoPossessPlayer = EAutoReceiveInput::Player0;(0-7)-----相当于编辑处设置操作玩家
+
+【输入映射】
+PlayerInputComponent->BindAxis("映射名",IE_Pressed,this,&类名::函数名);
+PlayerInputComponent->BindAxis("映射名",IE_Released,this,&类名::函数名);
+PlayerInputComponent->BindAxis("映射名",this,&类名::函数名);------头文件:"Components/InputComponent.h"
+
+CurrentVelocity.X = FMath::Clamp(Value,-1.f,1.f)*MaxSpeed;
+CurrentVelocity.Y = FMath::Clamp(Value,-1.f,1.f)*MaxSpeed;
+AddMomentInput(GetActorRightVector()*Value);
+上面三行是单纯移动
+运动组件->AddinputVector(GetActorRightVector()*Value);
+更改脸朝向的移动
+
+组件->SetCollisionProfileName(TEXT("BlockAll"));
+组件->SetHiddenInGame(false);
+
+C# Build.cs文件里添加"Slate" ----对应 BindKey;
+PlayerInputComponent->BindKey(Ekeys::J,IE_Pressed,this,&类名::函数名);
+
+
+
+【静态设置Mesh构造时】
+头文件:"UObjcet/ConstructorHelpers.h"
+Static ConstructorHelpers::FObjectFinder<UStaticMesh>MeshComponentAsset(TEXT("路径引用"));--不加Static也行
+if(MeshComponentAsset.Succeeded())----判断上面静态创建的是否成功
+网格组件->SetStaticMesh(MeshComponentAsset.Object);将设置网格模型里的Mesh
+
+【查找某个类是否在路径存在】
+static ConstructorHelpers::FClassFinder<APawn>PlayerPawnBPClass(TEXT("路径"));
+if(PlayerPawnBPClass.Class!=NULL){...}
+
+【相机】
+头文件:"GameFramework/SprinArmComponent.h"
+相机组件->StupAttachment(摇臂组件，USpringArmComponent::SocketName);
+
+【移动组件】
+头文件:"MyMovementComponent.h"
+移动组件(movement)->UpdatedComponent = RootComponent;(GetRootComponent())----以谁为准计算运动
+!PawnOwner||!UpdatedCompoent||ShouldSkipUpdate();
+ConsumeInputVector().GetClampedToMaxSize(1)*DeltaTime * 150;-----当前计算运动的方向
+SafeMoveUpdatedComponent(运动方向,UpdatedComponent->GetComponentRotation(),true,HitResult);-----运动路径试算，类似Sweep
+HitResult.IsValiBlckingHit()---------------判断碰撞是否有效
+SlideAlongSurface(DeltaMovement,1 - HitResult.Time,HitResult.Normal,HitResult);--------------撞到物理后，溜边滑动
+
+【碰撞盒子】动态绑定Begin和End不能放在构造函数在Begin里就行
+碰撞组件->OnComponentBeginOverlap.AddDynamic(this,&自定义类::开始函数); ----Begin绑定函数
+碰撞组件->OnComponentEndOverlap.AddDynamic(this,&自定义类::结束函数); ------End绑定函数
+此处自定义函数一定要跟蓝图里的 Begin和End参数相同。
+碰撞组件->OnComponentBeginOverlap.RemoveDynamic(this,&自定义类::开始函数)---解除绑定的函数
+碰撞组件->SetCollisionEnabled(ECollisionEnabled::QueryOnly);------开启碰撞
+碰撞组件->SetCollisionEnabled(ECollisionEnabled::NoCollision);----关闭碰撞
+碰撞组件->SetConllisionObjcetType(ECollisionChannel::ECC_WorldDynamic)--设置自身物理类型
+碰撞组件->SetConllisionResponseToAllChannels(ECollisionResponse::ECC_Ignore);--设置所有通道响应类型为忽略
+碰撞组件->SetConllisionResponseToChannel(ECollsionChannel::ECC_Pawn,ECollisionResponse::ECR_Overlap);--设置Pawn类型响应为重叠
+
+
+【计时器】
+头文件"TimerManager.h"
+FTimerHandle 定时器句柄;
+GetWorldTimerManager().SetTimer(定时器句柄,this,&自定义类::函数,间隔时间之后调用函数);
+GetWorldTimerManager().SetTimer(定时器句柄,this,&自定义类::函数,间隔时间之后调用函数,真循环);
+GetWorldTimerManager().ClearTimer(TimerHandle);
+
+FTimeDelegate 定时器委托 = FTimeDelegate::CreateUObjcet(this,&自定义类::函数);-----委托
+GetWorldTimerManager().SetTimer(定时器句柄,定时器委托,间隔时间之后调用函数,是否循环);
+
+
+【动态生成】Spawn
+UWorld* MyWorld = GetWorld();
+类型* 对象名 = MyWorld->SpawnActor<类型>(对象类型(UClass*),坐标)
+GetWorld()->SpawnActor<父类型>(子类型::StaticClass(),坐标,FQuat::Identity.Rotator());
+
+【销毁对象】
+GetWorld()->DestroyActor(对象);
+【根据路径获取对象】
+Uclass* 类类型对象 = Loadclass<AActor>(NULL,TEXT("复制的路径_c")); -----获取蓝图对象路径里的类类型
+Uclass* 类类型对象 = Loadclass<U自定义UI>(NULL,TEXT("复制的路径_c")); -----获取蓝图对象路径里的类类型
+
+GetWorld()->SpawnActor<AActor>(类类型对象,GetActorTransform())----------动态生成
+
+【查找某类的对象】
+#include "Kismet/GameplayStatics.h"
+UGameplayStatics::GetAllActorOfClass(GetWorld(),类::StaticClass(),AActor数组) --------------获取世界中的指定类对象放入数组里
+
+【插值与平滑】
+FMath::VinterTo(当前位置，目标位置，时间，速度);
+
+【粒子特效系统】
+头文件"Particles/ParticleSystemComponent.h" ---------- 粒子头文件
+头文件"Kismet/GameplayStatics.h" --------------------- 生成粒子
+UGamePlayStatics::SpawnEmitterAtLocation(GetWorld(),PartticleOverlap(粒子效果),GetActorLocation())
+UGamePlayStatics::SpawnEmitterAtLocation(this,PartticleOverlap(粒子效果),Mesh->GetSocketLocation("WeaponSocket")))
+
+【文本渲染】
+class UTextRenderComponent* --------------------------- 文本渲染组件
+渲染对象->SetText(Fstring::FromInt(5));-----------------将数字5加入渲染文本里
+
+【声音系统】
+头文件"Sound/SoundCue.h" ----------------------------- 播放声音
+class USoundeCue* ------------------------------------ 声音对象
+UGameplayStatics::PlaySound2D(GetWorld(),SoundOverlap);-----无距离的声音
+UGameplayStatics::PlaySound2D(this,SoundEquiped);-----无距离的声音
+头文件"Kismet/GameplayStatics.h"---------------------- 播放声音
+
+【输入模式】SetGameModeAndUI
+bShowMounseCursor = true; ----------------------------显示鼠标
+FInputModeUIOnly InputMode;---------------------------声明UI是唯一输入模式对象
+FInputModeGameOnly InputMode;-------------------------声明游戏是唯一输入模式对象
+InputMode.SetLockMouseToViewportBehavior--------------设置鼠标锁定窗口的方式
+SetInputMode(InputMode);------------------------------根据输入模式对象设置输入模式
+
+
+【UI】
+头文件 .Build.cs添加"UMG"------------------------------添加UI模块
+TSubclassOf<UUserWidget> 对象名------------------------UI类类型对象
+UUserWidget* HUD --------------------------------------UI对象
+CreateWidge<UUserWidget>(this,类类型对象)--------------根据UI类型创建一个对象
+CreateWidge<UUserWidget>(GetWorld(),类类型对象)--------------根据UI类型创建一个对象
+UI对象->AddToViewport()--------------------------------将UI添加的客户端视口上
+
+【骨骼网格】
+骨骼网格->SetCollisionEnabled ------------------------- 关闭碰撞
+骨骼网格->SetCollisionResponseToAllChannels(ECR_Ignore)-设置忽略所有的碰撞响应
+骨骼网格->SetSimulatePhysics(false)-------------------- 关闭物理
+AttachToComponent(组件,粘附加的方式,"Socket槽")---------将Actor本身粘附到指定组件身上
+FAttachmentTransformRules::SnapToTargetNotIncludingScale-粘附加的方式(此方式为不缩放)
+
+【动画】
+头文件"Animation/AnimInstance.h"
+UAnimInstance* Instance = GetMesh()->GetAnimInstance();--获取骨骼模型的动画蓝图实例
+动画实例->Montage_IsPlaying()--------------------------判断指定蒙太奇是否在播放
+动画实例->IsAnyMontagePlaying()------------------------判断是否有任意动画在播放
+动画实例->Montage_Play(AnimMontage)--------------------播放蒙太奇动画
+Instance->Montage_JumpToSection(FName("动画段名"),动画蒙太奇); 播放指定动画段里的动画
+
+【方向相关】
+FRotator CurrentRotation = GetActorRotation();
+FRotator TargetRotation = UKismetMathLibrary::FindLookAtRotation(自己位置,怪物位置);--获取自己面向怪物的世界方向
+FRotator(CurrentRotation.Pitch,TargetRotation.Yaw,CurrentRotation.Roll);
+
+头文件"Kismet/KismetMathLibrary.h"------------------
+
+
+
+【AI】
+头文件 .Build.cs添加"AIModule"------------------------------添加UI模块】
+头文件"AIController.h"--------------------------------------AI控制器
+AAIController* 
+FAIMoveRequest 移动方式对象-----------------------------------------相当于AIMoveto里的参数对象
+移动方式对象.SetGoalActor(追踪Actor对象)--------------------------相当于AIMoveto里的移动对象
+移动方式对象.SetAcceptanceRadius(数值范围)------------------------相当于AIMoveto里的移动范围
+FNavPathSharedPtr 导航路径对象
+AIController->MoveTo(移动请求对象,&导航路径对象)---------------------根据移动方式和导航路径的地址移动
+
+【AI导航路径调试】
+"Kismet/KismetSystemLibrary.h" 调试未知
+auto PathPoints = 导航路径对象->GetPathPoints();--------------------------获取到达路径里的所有点。
+for(auto Point:PathPoints){
+   FVector Location = Point.Location;
+   UKismetSystemLibrary::DrawDebugSphere(this,Location)--------------调试地图显示途径点
+}
+
+【打开关卡】
+UGameplayStatics::OpenLevel(PlayerController->GetWorld(),Fname("GameMap"),true,FString("listem"));
+
+【游戏实例】GameInstance
+自定义实例类型* 对象 = Cast<自定义实例类>(UGameplayStatics::GetGameInstance(Getworld()));
+
+
+【游戏模式】GameMode
+PlayerControllerclass = 自定义控制器类::StaticClass();
+DefaultPawnClass = 自定义角色类::StatiClass();或者NULL;
+
+
+【RPC网络】
+BNetLoadOnClient ---------------------------------------布尔值,关卡加载时，已存在的静态对象是否同步显示给客户端
+SetReplicates(true)-------------------------------------网络复制，必须由服务端执行，同步给所在客户端。(Actor和player有区别)
+Getworld()->IsServer()----------------------------------判断是否是服务端
+GetNetMode()--------------------------------------------判断是否是服务端,返回枚举值:ENetMode
+ENetMode枚举--------------------------------------------NM_Standalone:单独单机游戏|NM_DedicatedServer:专用服务器|NM_ListenServer:监听服务器|NM_Client:客户端|NM_MAX:官方没解释未知|
+Role枚举------------------------------------------------ROLE_None:无|ROLE_Authority:服务器上的对象|ROLE_SimulatedProxy:其它客户端在本机上的一个模拟代理|ROLE_AutonomousProxy:本机上控制器的角色|
+Has Authority-------------------------------------------如果对象是客户端创建的，则客户端执行时会返回为Authority。如果是服务端创建的对象通过Replicates复制给客户端，则服务端会返回Authority，客户端则返回Remote。(此函数是判断Acotr是否是当前调用者的所拥有。)
+
+
+【C++Replicates变量】
+UPROPERTY(Replicated） ---------------------------------变量宏设置可复制(网络多人使用的)
+
+
+[网络注册变量代码示例:]
+"UnrealNetwork.h"---------------------------------------.cpp文件加入。
+void 当前类::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps)const ------变量注册到网络？？
+{
+     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+     DOREPLIFETIME(当前类或拥有变量的类,需要的复制变量); //参考下方
+}
+OREPLIFETIME(类,变量)----------------------------------------所有端都更新；
+OREPLIFETIME_CONDITION(类,变量,COND_OwnerOnly)---------------该属性仅发送给Actor的拥有者(Has Authority返回Authority那个)
+OREPLIFETIME_CONDITION(类,变量,COND_SkipOwner)---------------该属性发送给除了拥有者以外的其他每个连接
+OREPLIFETIME_CONDITION(类,变量,COND_Custom)------------------该属性没有特定条件,但需要通过SetCustomIsActiveOverride 开启/关闭能力
+....................
+可参考官方文档:条件属性复制
+
+【RepNotify变量】
+UPROPERTY(ReplicatedUsing = OnRep_变量名） -------------------------------变量宏设置可复制变量，变量设置更改的时候触发客户端执行函数，注意:蓝图则是服务端和客户端都执行(网络多人使用的)
+bool 变量名;
+UFUNCTION()
+void OnRep_变量名();
+
+OnRep_变量名();
+如果要OnRep函数服务端和客户端都执行，必须在自己手动调用执行一次该函数。手动调用只会在服务端执行。
+
+需要cpp调用
+[网络注册变量代码]
+
+【网络函数方法】
+UFUNCTION(NetMulticast,Reliale)-----------------------------广播与可靠的。由服务端执行调用服务端以及所有客户端上。
+UFUNCTION(Client,Reliale)-----------------------------------服务端执行，调用拥有者的客户端。客户端调用只会在当前客户端执行
+UFUNCTION(Server,Reliale,WithValidation)--------------------客户端执行时，会调用服务端里的拥有者。
+Reliale-----------------------------------------------------可靠，必传达
+Unreliale---------------------------------------------------为不可靠，网络不好时可能会舍弃
+WithValidation----------------------------------------------使用server函数时的安全检查
+
+【Server函数】
+UFUNCTION(Server,Reliale,WithValidation)需要在宏里增加安全检查
+void 自定义函数(var);---------------------------------------------该函数cpp里不需要实现
+virtual void 自定义函数名_Implementation(var);--------------------cpp需要实现，逻辑交互	
+virtual bool 自定义函数名_Validate(var);--------------------------cpp需要实现，实现安全检验返回布尔值
+
+
+
+
+【会话联网模块】C# Build.cs文件
+"HeadMountedDisplay" ---- 不一定需要
+"OnlineSubsystem"
+"OnlineSubsystemUtils"
+
+DynamicallyLoadeMouduleNames.AddRange(new string[]{"OnlineSubsystemNull",})
+
+头文件:"OnlineSessionInterface.h"
+头文件:"IDelegateInstance.h"
+------下方未完成
+class IOnlineSubsystem;
+protected:
+void 自定义创建会话函数(FName,bool){}
+void 自定于开始网络游戏(FName,bool){}
+FOnCreateSessionCompleteDelegate 对象名;
+FOnStartSessionCompleteDelegate 对象名;
+
+IOnlineSubsystem* OnLineSub;
+TsharedPtr<const FUniqueNetID> UserID;

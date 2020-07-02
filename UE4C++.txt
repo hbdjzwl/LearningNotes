@@ -1,0 +1,153 @@
+
+-----------------------------------------------------------------------------------------
+UPROPERTY(...);                 宏在成员变量上写将变量A公开到细节面板
+*参数: UP::EditAnywhere      可以在任何地方细节面板编辑
+*参数: VisibleAnywhere       显示但不允许细节面板修改     
+*参数:BlueprintReadWrite   可以在蓝图中读取写入
+*参数:BlueprintReadOnly    只能在蓝图中读取不能Set
+*参数:Category = "..."         ...自定义设置类别名称
+【同等蓝图:面板显示和公有私有操作】
+------------------------------------------------------------------------------------------
+UFUNCTION(....)
+*参数:BlueprintCallable    蓝图可搜索节点函数
+【将下面的函数变为节点函数】
+
+
+------------------------------------------------------------------------------------------
+#include "Engine.h"          
+GEngine->AddOnScreenDebugMessage(参1,参2,参3,参4)
+*参数1:  -1                            屏幕坐标
+*参数2:  5.0f                         显示的时间
+*参数3:  FColor::Blue            显示的颜色
+*参数4:  TEXT("Hello!")         显示的文字
+【同等蓝图:print string】
+----------------------------------------------------------------------------------------
+UE_LOG(LogTemp,Warning,TEX("XXXX"));
+【输出日志可以查看】
+------------------------------------------------------------------------------------------
+FString::FromInt(...)          
+FString::FromFloat(...)
+*参数:Int,Float....                 类型转换
+【类型转为string】
+
+------------------------------------------------------------------------------------------
+#include "Components/StaticMeshComponent.h"
+UStaticMeshComponent  *  SphereMesh;     静态模型类型
+SphereMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SphereMesh"));    为组件实例化
+SphereMesh->SetSimulatePhysics(true);      开启物理引擎 
+【添加StaticMesh静态模型】
+------------------------------------------------------------------------------------------
+#include "GameFramework/SpringArmComponent.h"
+USpringArmComponent  *  CameraArm;    摄像机手臂
+CameraArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraArm"));    为组件实例化
+CameraArm->SetupAttachment(SphereMesh);   将摄像机手臂成为静态模型的子组件
+【添加Spring手臂】类名和变量名相同可能会有问题
+------------------------------------------------------------------------------------------
+#include "Camera/CameraComponent.h"
+UCameraComponent* Camera;                   摄像机
+Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));    为组件实例化
+Camera->SetupAttachment(CameraArm);   将摄像机手臂成为静态模型的子组件
+【添加Camera相机】
+------------------------------------------------------------------------------------------
+头文件自定义事件函数
+UFUNCTION(BlueprintCallable)              宏定义显示下面函数为可调用的
+void MoveForward(float val);               创建自定义事件并声明为可调用的
+void MoveRight(float val);               创建自定义事件并声明为可调用的
+【输入轴映射绑定】
+输入映射添加Axis轴映射:MoveForward;
+#include "Components/InputComponent.h"
+PlayerInputComponent->BindAxis("MoveForward",this,&类名::MoveForward);
+PlayerInputComponent->BindAxis("MoveRight",this,&类名::MoveForward);
+参数1: 输入映射键值
+参数2: 自身this
+参数3: 事件函数名
+
+UFUNCTION(BlueprintCallable)              宏定义显示下面函数为可调用的
+void SpeedUp(float val);               创建自定义事件并声明为可调用的
+void SpeedUp(float val);               创建自定义事件并声明为可调用的
+PlayerInputComponent->BindAction("SpeedUp",IE_Pressed,this,&类名::SpeedUp);
+PlayerInputComponent->BindAction("SpeedUp",IE_Released,this,&类名::SpeedLow);
+参数1: 输入映射键值
+参数2: 按下时
+参数3: 自身this
+参数4: 事件函数名
+【按键映射绑定】
+-------------------------------------------------------------------------------------------------
+【绑定自定义的函数，类似映射输入事件】
+SphereMesh->SetPhysicsAngularVelocity(FVector(100.0f,0,0));
+参数1:三维向量力度
+----------------------------------------------------------------------------
+创建一个盒体碰撞C++基类继承Actor
+#include "Components/BoxComponent.h"
+UBoxComponent * HitBoxCom;
+HitBoxCom = CreateDefaultSubobject<UBoxComponent>(TEXT("HitBox"));
+绑定自定义函数
+自定义函数(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+
+HitBoxCom->OnComponentBeginOverlap.AddDynamic(this,&类名::自定义函数)
+【绑定盒体碰撞】
+-----------
+Cast<ASphereBase>(OtherActor)
+【类型转换】
+---------------------------------------------------------------------------------------------------
+#include "Engine.h"
+GetWorld()->GetFirstPlayerController()->GetPawn();  获取玩家控制器第一个角色
+GetWorld()->GetAuthGameMode();
+SetActorLocation(...)
+GetComponentLocation()获取组件位置  
+------------------------------------------------------
+qq_25580197
+-----------------------------------------------------
+继承Object类删掉多余的标识符和头文件
+USTRUCT(BlueprintType)
+struct F。。{                      //命名需要头缀U
+     GENERATED_BODY()   //反射基本每个类都有
+    
+};
+【结构体】
+-------------------------------------------
+UENUM(BlueprintType)
+enum class MyEnum : uint8
+{
+    A，B，C
+};
+【枚举】
+------------------------------------------------
+【接口】(非继承)
+创建一个空类删除多余的标识符
+#include "Weapon_Interface.generated.h"
+UINTERFACE(Blueprintable)
+class UWeapon_Interface : public UInterface    //命名需要头缀U
+{
+     GENERATED_BODY()
+}
+
+class  IWeapon_Interface   //不在乎命名
+{
+     GENERATED_BODY()
+public:
+     UFUNCTION(BlueprintCallable,BlueprintNativeEvent)              //需要具体实现
+          bool Weapon_Int_Fire(bool IsFire);                  //接口函数
+     UFUNCTION(BlueprintCallable,BlueprintImplementableEvent)  //可以在Chacter类里写。因为缺少头文件无法补全
+          void Weapon_Int_Fire_Implementable(bool isFire); 
+}
+
+添加一个Actor类也就是需要使用接口的类
+添加一个类继承 IWeapon_Interface
+UClass()
+class MTPROJECT_API AWeapon : public AActor,public Iweapon_Interface
+{
+     GENERATED_BODY()
+public:
+      bool Weapon_Int_Fire_Implementation(bool isFire);     //接口函数名后面  +   _Implementation
+
+      TSubclassOf<class AActor> bullet;
+
+.....
+}
+#include "Englie.h"
+bool AWeapon::Weapon_Int_Fire_Implementation(bool isFire)
+{
+   GetWorld()->SpawnActor<AActor>(bullet,this->getTransform());
+}
+-----------------------------------------------------------------
